@@ -20,10 +20,9 @@ boolean getHTTPBody(Client &clnt, char *buffer, int size);
 #define HTTP_CONTENT_TYPE_JSON "Content-Type: application/json\r\n"
 #define HTTP_CONNECTION_CLOSE "Connection: close\r\n\r\n"
 
-#define NADES_UPDATE_INTERVAL 300000 // 5 minutes
-//define NADES_UPDATE_INTERVAL 10000 
+#define NADES_UPDATE_INTERVAL 180000 // 3 minutes
 
-byte NADES_SERVER_IP_ADDRESS[] = { 192, 168, 1, 20 };
+byte NADES_SERVER_IP_ADDRESS[] = { 192, 168, 1, 8 };
 int NADES_SERVER_IP_PORT = 8000;
 
 char NADESData[128];
@@ -41,7 +40,7 @@ unsigned long NADESLastUpdate = 0;
 
 const unsigned int SERVER_PORT = 80;
 byte MAC_ADDRESS[] = { 0x90, 0xA2, 0xDA, 0x00, 0x09, 0xBF };
-byte IP_ADDRESS[] = { 192, 168, 1, 18 };
+byte IP_ADDRESS[] = { 192, 168, 1, 9 };
 WebServer webserver("", 80);
 
 /*
@@ -89,8 +88,7 @@ void indexCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail,
   server.print(currentUsePower);
   server.print(" W - ");
   server.print((float)usagePower/cPower,4);
-  server.print(" kWh");
-  server.print("</h1><pre>");
+  server.print(" kWh</h1><pre>");
   // meanValuePower, sensorValuePower, statePower
   server.print(config.meanValuePower);
   server.print(",");
@@ -102,8 +100,9 @@ void indexCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail,
   // Gas
   server.print("<h1>Gas: ");
   server.print(currentUseGas);
-  server.print(" dm3");
-  server.print("</h1><pre>");
+  server.print(" dm3 - ");
+  server.print((float)usagePower/cPower,4);
+  server.print(" m3</h1><pre>");
   server.print(config.meanValueGas);
   server.print(",");
   server.print(sensorValueGas);
@@ -158,9 +157,8 @@ void updateNADES() {
       // {"n":"p","t":83321.2031,"c":560.7267,"a":500.5327,"s":"Mon, 23 Aug 2010 21:17:46 GMT"}
       PString pstring = PString(NADESData, sizeof(NADESData));
       pstring.begin();
-      pstring.print("{");
-      pstring.print("\"n\": \"p\",");
-      pstring.print("\"t\":");
+      pstring.print("[");
+      pstring.print("{\"n\": \"p\",\"t\":");
       pstring.print((float)(usagePower/cPower),4);
       pstring.print(",\"c\":");
       pstring.print((float)(currentUsePower),4);
@@ -168,7 +166,17 @@ void updateNADES() {
       pstring.print((float)(averageUsePower/ticksSinceLastReportPower),4);
       pstring.print(",\"s\":\"");
       pstring.print(dtString);
+      pstring.print("\"},");
+      pstring.print("{\"n\": \"g\",\"t\":");
+      pstring.print((float)(usageGas/cGas),4);
+      pstring.print(",\"c\":");
+      pstring.print((float)(currentUseGas),4);
+      pstring.print(",\"a\":");
+      pstring.print((float)(averageUseGas/ticksSinceLastReportGas),4);
+      pstring.print(",\"s\":\"");
+      pstring.print(dtString);
       pstring.print("\"}");
+      pstring.print("]");
       
       // Reset sensor ticks since last report
       resetReportedTicksAndAverages();

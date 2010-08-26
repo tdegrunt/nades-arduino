@@ -22,7 +22,7 @@ struct ConfigStruct {
 } config = {
   CONFIG_VERSION,
   // The default values
-  140, 800, 512
+  850, 800, 512
 };
 
 void loadConfig() {

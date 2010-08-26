@@ -1,5 +1,5 @@
 // 
-//  NADES.pde
+//  nades.pde
 //  NADES
 //  
 //  Created by Tom de Grunt on 2010-08-17.
@@ -21,7 +21,7 @@ const unsigned int DELAY = 200; // miliseconds
 void setup() {
   loadConfig();
   Serial.begin(9600);
-  Serial.println("NADES");
+  Serial.println("[nades]");
   Serial.println("");
 
   setupWeb();

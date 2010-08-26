@@ -34,9 +34,10 @@ float currentUsePower               = 0;            // Current power usage (in W
 float averageUsePower               = 0;
 unsigned long ticksSinceLastReportPower = 0;
 unsigned long lastRotationTimePower = 0;
-unsigned long usagePower            = 9998700;      // Total kW/h in rotations
+unsigned long usagePower            = 10002000;      // Total kW/h in rotations
 
 float cPower                        = 120;          // C = 120 (120 rotations per kWh)
+float cGas                          = 1000;         // C = 1000 (1000 rotations per m3)
 
 // =======
 // = Gas =
@@ -48,8 +49,10 @@ unsigned int stateGas     = STATE_CALIBRATING;
 int sensorValueGas = 0;
 
 float currentUseGas                 = 0;            // Current power usage
+float averageUseGas                 = 0;
+unsigned long ticksSinceLastReportGas = 0;
 unsigned long lastRotationTimeGas   = 0;
-unsigned long usageGas              = 0;            // m3 in rotations, ie total d3
+unsigned long usageGas              = 86772015;    // m3 in rotations, ie total d3
 
 void setupSensors(void) {
   pinMode(SENSOR_PIN_POWER, INPUT);
@@ -77,10 +80,22 @@ void increaseTickPower(void) {
 void resetReportedTicksAndAverages(void) {
   ticksSinceLastReportPower = 0;
   averageUsePower = 0;
+
+  ticksSinceLastReportGas = 0;
+  averageUseGas = 0;
 }
 
 void increaseTickGas(void) {
+  unsigned long time = millis();
   usageGas++;
+  ticksSinceLastReportGas++;
+  if (lastRotationTimeGas > 0) {
+    // Calculate use, see Power for more info
+    // We want to report on dm3, not m3
+    currentUseGas = (3600000000.0 / (time-lastRotationTimeGas)) / cGas;
+    averageUseGas += currentUseGas;
+  }
+  lastRotationTimeGas = time;
 }
 
 /*
