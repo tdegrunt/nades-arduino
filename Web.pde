@@ -25,7 +25,7 @@ boolean getHTTPBody(Client &clnt, char *buffer, int size);
 byte NADES_SERVER_IP_ADDRESS[] = { 192, 168, 1, 8 };
 int NADES_SERVER_IP_PORT = 8000;
 
-char NADESData[128];
+char NADESData[256];
 char dateTimeBuffer[32];
 char bodyBuff[11]; 
 
@@ -85,7 +85,7 @@ void indexCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail,
   
   // Power
   server.print("<h1>Power: ");
-  server.print(currentUsePower);
+  server.print(currentUsePower,4);
   server.print(" W - ");
   server.print((float)usagePower/cPower,4);
   server.print(" kWh</h1><pre>");
@@ -99,9 +99,9 @@ void indexCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail,
 
   // Gas
   server.print("<h1>Gas: ");
-  server.print(currentUseGas);
+  server.print(currentUseGas,3);
   server.print(" dm3 - ");
-  server.print((float)usagePower/cPower,4);
+  server.print(usageGas/cGas,3);
   server.print(" m3</h1><pre>");
   server.print(config.meanValueGas);
   server.print(",");
@@ -168,11 +168,11 @@ void updateNADES() {
       pstring.print(dtString);
       pstring.print("\"},");
       pstring.print("{\"n\": \"g\",\"t\":");
-      pstring.print((float)(usageGas/cGas),4);
+      pstring.print((usageGas/cGas),3);
       pstring.print(",\"c\":");
-      pstring.print((float)(currentUseGas),4);
+      pstring.print((float)(currentUseGas),3);
       pstring.print(",\"a\":");
-      pstring.print((float)(averageUseGas/ticksSinceLastReportGas),4);
+      pstring.print((float)(averageUseGas/ticksSinceLastReportGas),3);
       pstring.print(",\"s\":\"");
       pstring.print(dtString);
       pstring.print("\"}");
