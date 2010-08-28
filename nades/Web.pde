@@ -25,8 +25,7 @@ boolean getHTTPBody(Client &clnt, char *buffer, int size);
 byte NADES_SERVER_IP_ADDRESS[] = { 192, 168, 1, 8 };
 int NADES_SERVER_IP_PORT = 8000;
 
-char NADESData[256];
-char dateTimeBuffer[32];
+char jsonBuffer[128];
 char bodyBuff[11]; 
 
 unsigned long NADESLastUpdate = 0;
@@ -82,118 +81,116 @@ void setCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail, b
  */
 void indexCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail, bool tail_complete) {
   server.httpSuccess("text/html");
+  server.print("{");
+  server.print("\"created_at\":\"");
   
-  // Power
-  server.print("<h1>Power: ");
-  server.print(currentUsePower,4);
-  server.print(" W - ");
-  server.print((float)usagePower/cPower,4);
-  server.print(" kWh</h1><pre>");
-  // meanValuePower, sensorValuePower, statePower
-  server.print(config.meanValuePower);
-  server.print(",");
-  server.print(sensorValuePower);
-  server.print(",");
-  server.print(statePower);
-  server.print("</pre>");
-
-  // Gas
-  server.print("<h1>Gas: ");
-  server.print(currentUseGas,3);
-  server.print(" dm3 - ");
-  server.print(usageGas/cGas,3);
-  server.print(" m3</h1><pre>");
-  server.print(config.meanValueGas);
-  server.print(",");
-  server.print(sensorValueGas);
-  server.print(",");
-  server.print(stateGas);
-  server.print("</pre>");
-
+  server.print(dayShortStr(weekday()));
+  server.print(", ");
+  server.print(day());
+  server.print(" ");
+  server.print(monthShortStr(month()));
+  server.print(" ");
+  server.print(year()); 
+  server.print(" ");
+  server.print(hour());
+  server.print(":");
+  if (minute() < 10) {
+    server.print("0");
+  }
+  server.print(minute());
+  server.print(":");
+  if (second() < 10) {
+    server.print("0");
+  }
+  server.print(second());
+  server.print(" GMT");      
+  
+  server.print("\",");
+  server.print("\"data\":[");
+  
+  for(int i = 0; i < TOTAL_SENSORS; i++) {
+    sensors[i].toJSON(jsonBuffer,sizeof(jsonBuffer));
+    server.print(jsonBuffer);
+    if (i < TOTAL_SENSORS-1) {
+      server.print(",");
+    }
+  }
+  
+  server.print("]}");  
 }
 
 void updateNADES() {
   unsigned long time = millis();
 
   if (time - NADESLastUpdate >= NADES_UPDATE_INTERVAL) {
-    NADESLastUpdate = millis(); // reset timer
     
     Client NADESClient(NADES_SERVER_IP_ADDRESS, NADES_SERVER_IP_PORT);
     if (NADESClient.connect()) {
       
-      PString dtString(dateTimeBuffer, sizeof(dateTimeBuffer));
-      dtString.begin();
-      dtString.print(dayShortStr(weekday()));
-      dtString.print(", ");
-      dtString.print(day());
-      dtString.print(" ");
-      dtString.print(monthShortStr(month()));
-      dtString.print(" ");
-      dtString.print(year()); 
-      dtString.print(" ");
-      dtString.print(hour());
-      dtString.print(":");
-      if (minute() < 10) {
-        dtString.print("0");
+      int contentLength = 56;  // 56 for {"created_at":"Wed, Aug 25 2010 23:27:18 GMT","data":[]}
+      for(int i = 0; i < TOTAL_SENSORS; i++) {
+        contentLength += sensors[i].toJSON(jsonBuffer,sizeof(jsonBuffer));
+        if (i < TOTAL_SENSORS-1) {
+          contentLength += 1;
+        }
       }
-      dtString.print(minute());
-      dtString.print(":");
-      if (second() < 10) {
-        dtString.print("0");
-      }
-      dtString.print(second());
-      dtString.print(" GMT");
-      
-      // JSON for data - as short as possible
-      // 
-      // Keys: 
-      // - n: name (values: p(ower), g(as), w(ater))
-      // - t: total (float)
-      // - c: current (float)
-      // - a: average (float) - since last report
-      // - s: stamp (date time stamp)
-      // 
-      // Example:
-      // {"n":"p","t":83321.2031,"c":560.7267,"a":500.5327,"s":"Mon, 23 Aug 2010 21:17:46 GMT"}
-      PString pstring = PString(NADESData, sizeof(NADESData));
-      pstring.begin();
-      pstring.print("[");
-      pstring.print("{\"n\": \"p\",\"t\":");
-      pstring.print((float)(usagePower/cPower),4);
-      pstring.print(",\"c\":");
-      pstring.print((float)(currentUsePower),4);
-      pstring.print(",\"a\":");
-      pstring.print((float)(averageUsePower/ticksSinceLastReportPower),4);
-      pstring.print(",\"s\":\"");
-      pstring.print(dtString);
-      pstring.print("\"},");
-      pstring.print("{\"n\": \"g\",\"t\":");
-      pstring.print((usageGas/cGas),3);
-      pstring.print(",\"c\":");
-      pstring.print((float)(currentUseGas),3);
-      pstring.print(",\"a\":");
-      pstring.print((float)(averageUseGas/ticksSinceLastReportGas),3);
-      pstring.print(",\"s\":\"");
-      pstring.print(dtString);
-      pstring.print("\"}");
-      pstring.print("]");
-      
-      // Reset sensor ticks since last report
-      resetReportedTicksAndAverages();
       
       NADESClient.print("POST /update HTTP/1.1\r\n");
       NADESClient.print(HTTP_USER_AGENT);
       NADESClient.print(HTTP_CONTENT_TYPE_JSON);
       NADESClient.print("Content-Length: ");
-      NADESClient.print(pstring.length());
+      NADESClient.print(contentLength);
       NADESClient.print("\n");
       NADESClient.print(HTTP_CONNECTION_CLOSE);
       // body
-      NADESClient.print(pstring);
-    
-      while (NADESClient.available()) {
-        char c = NADESClient.read();
-        Serial.print(c);
+      
+      NADESClient.print("{");
+      NADESClient.print("\"created_at\":\"");
+      
+      NADESClient.print(dayShortStr(weekday()));
+      NADESClient.print(", ");
+      NADESClient.print(day());
+      NADESClient.print(" ");
+      NADESClient.print(monthShortStr(month()));
+      NADESClient.print(" ");
+      NADESClient.print(year()); 
+      NADESClient.print(" ");
+      NADESClient.print(hour());
+      NADESClient.print(":");
+      if (minute() < 10) {
+        NADESClient.print("0");
+      }
+      NADESClient.print(minute());
+      NADESClient.print(":");
+      if (second() < 10) {
+        NADESClient.print("0");
+      }
+      NADESClient.print(second());
+      NADESClient.print(" GMT");      
+      
+      NADESClient.print("\",");
+      NADESClient.print("\"data\":[");
+
+      for(int i = 0; i < TOTAL_SENSORS; i++) {
+        sensors[i].toJSON(jsonBuffer,128);
+        NADESClient.print(jsonBuffer);
+        if (i < TOTAL_SENSORS-1) {
+          NADESClient.print(",");
+        }
+      }
+
+      NADESClient.print("]}");
+
+      delay(20);
+      
+      if (getHTTPBody(NADESClient, bodyBuff, 10)) {
+        if (bodyBuff[0] == 'O' && bodyBuff[1] == 'K') {
+          // Reset sensor ticks since last report
+          for(int i = 0; i < TOTAL_SENSORS; i++) {
+            sensors[i].resetForReporting();        
+          }
+          NADESLastUpdate = time; // reset timer
+        }
       }
       NADESClient.stop();
     } 
@@ -206,7 +203,7 @@ time_t requestTimeSync() {
     NADESClient.print("GET /time HTTP/1.1\r\n");
     NADESClient.print(HTTP_USER_AGENT);
     NADESClient.print(HTTP_CONNECTION_CLOSE);
-    delay(200);
+    delay(20);
       
     if (getHTTPBody(NADESClient, bodyBuff, 10)) {
       time_t pctime = 0;

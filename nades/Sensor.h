@@ -2,10 +2,11 @@
 //  Sensor.h
 //  NADES
 //  
-//  Created by Tom de Grunt on 2010-08-19.
+//  Created by Tom de Grunt on 2010-08-28.
 //  Copyright 2010 Tom de Grunt. All rights reserved.
 // 
 
+#include "WProgram.h"
 #import "PString.h"
 
 class Sensor {
@@ -38,9 +39,23 @@ public:
   int toJSON(char *jsonBuffer, int bufferSize);
 };
 
+/*
+ * Constructor
+ */
 Sensor::Sensor() {
 }
 
+/*
+ * setup
+ *
+ * aSensorPin - which (digital) pin to use
+ * aName - name of the sensor (power, gas, water)
+ * aTickOnLowOrHigh - whether the sensor should tick on a LOW or a HIGH
+ * aC - turns per kWh / m3
+ * aReportFactor - multiplication factor for the current and average usage (to report in Watts or dm3, etc)
+ * aReportDigits - precision when reporting
+ * aUsage - current usage of the unit in turns
+ */
 void Sensor::setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int aC, int aReportFactor, int aReportDigits, unsigned long aUsage) {
   sensorPin = aSensorPin;
   name = aName;
@@ -50,24 +65,33 @@ void Sensor::setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int 
   reportDigits = aReportDigits;
   usage = aUsage;
 
-  state = lastState = -1;
+  state = lastState = digitalRead(sensorPin);
 }
 
+/*
+ * check - checks the sensor
+ */
 void Sensor::check() {
   int state = digitalRead(sensorPin);
 
-  if (state == HIGH && lastState != state) {
+  if (state == tickOnLowOrHigh && lastState != state) {
     tick();
+    Serial.print(name);
+    Serial.println(": tick!");
   }
   lastState = state;
 }
 
+/*
+ * tick - records a tick
+ */
 void Sensor::tick() {
   unsigned long time = millis(); // Record tick time!
   usage++;
   ticksSinceLastReport++;
   if (lastRotationTime > 0) {
-    currentUse = reportFactor * ((3600000.0 / (time-lastRotationTime)) / (float)c);
+    // 3600000.0 is the number of miliseconds in an hour
+    currentUse = (float)reportFactor * ((3600000.0 / (float)(time-lastRotationTime)) / (float)c);
     averageUse += currentUse;
   }
   lastRotationTime = time;
