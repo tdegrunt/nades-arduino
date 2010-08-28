@@ -6,8 +6,6 @@
 //  Copyright 2010 Tom de Grunt. All rights reserved.
 // 
 
-// 11910 bytes
-
 #include "Sensor.h"
 #include "Time.h"
 
@@ -31,8 +29,8 @@ void setup() {
   Serial.println("");
 
   // Place to setup sensors (possibly do through web-interface?)
-  sensors[0].setup(7, "power", HIGH, 120, 1000, 4, (unsigned long)10003217); 
-  sensors[1].setup(6, "gas", LOW, 1000, 1000, 3, (unsigned long)86773263);
+  sensors[0].setup(7, "power", HIGH, 120, 1000, 4, (unsigned long)10003690); 
+  sensors[1].setup(6, "gas", LOW, 1000, 1000, 3, (unsigned long)86774455);
   //sensors[2].setup(5, "water", HIGH, 0, 0, 0);
 
   setupWeb();

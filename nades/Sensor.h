@@ -65,6 +65,7 @@ void Sensor::setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int 
   reportDigits = aReportDigits;
   usage = aUsage;
 
+  pinMode(sensorPin, INPUT);
   state = lastState = digitalRead(sensorPin);
 }
 
@@ -73,7 +74,6 @@ void Sensor::setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int 
  */
 void Sensor::check() {
   int state = digitalRead(sensorPin);
-
   if (state == tickOnLowOrHigh && lastState != state) {
     tick();
     Serial.print(name);
