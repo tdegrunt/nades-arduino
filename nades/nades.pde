@@ -6,6 +6,8 @@
 //  Copyright 2010 Tom de Grunt. All rights reserved.
 // 
 
+// 11910 bytes
+
 #include "Sensor.h"
 #include "Time.h"
 
@@ -23,7 +25,7 @@ const unsigned int DELAY = 200; // miliseconds
 // ================
 
 void setup() {
-  loadConfig();
+  //loadConfig();
   Serial.begin(9600);
   Serial.println("[nades]");
   Serial.println("");
