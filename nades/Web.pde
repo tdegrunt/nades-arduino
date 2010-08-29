@@ -47,7 +47,13 @@ void updateNADES() {
     if (NADESClient.connect()) {
       
       int contentLength = 56;  // 56 for {"created_at":"Wed, Aug 25 2010 23:27:18 GMT","data":[]}
-      for(int i = 0; i < TOTAL_SENSORS; i++) {
+      if (hour() < 10 ) {
+        contentLength -= 1;
+      }
+      if (day() < 10 ) {
+        contentLength -= 1;
+      }
+      for (int i = 0; i < TOTAL_SENSORS; i++) {
         contentLength += sensors[i].toJSON(jsonBuffer,sizeof(jsonBuffer));
         if (i < TOTAL_SENSORS-1) {
           contentLength += 1;

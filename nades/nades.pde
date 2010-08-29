@@ -29,8 +29,8 @@ void setup() {
   Serial.println("");
 
   // Place to setup sensors (possibly do through web-interface?)
-  sensors[0].setup(7, "power", HIGH, 120, 1000, 4, (unsigned long)10003690); 
-  sensors[1].setup(6, "gas", LOW, 1000, 1000, 3, (unsigned long)86774455);
+  sensors[0].setup(7, "power", HIGH, 120, 1000, 4, (unsigned long)10004410, 1); 
+  sensors[1].setup(6, "gas", LOW, 1000, 1000, 3, (unsigned long)86774759, 10);
   //sensors[2].setup(5, "water", HIGH, 0, 0, 0);
 
   setupWeb();

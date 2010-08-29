@@ -30,10 +30,12 @@ private:
   int reportFactor;
   int reportDigits;
   
+  int increment;
+  
   void tick();
 public:
   Sensor();
-  void setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int aC, int aReportFactor, int aReportDigits, unsigned long aUsage);
+  void setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int aC, int aReportFactor, int aReportDigits, unsigned long aUsage, int aIncrement);
   void check();
   void resetForReporting();
   int toJSON(char *jsonBuffer, int bufferSize);
@@ -55,8 +57,9 @@ Sensor::Sensor() {
  * aReportFactor - multiplication factor for the current and average usage (to report in Watts or dm3, etc)
  * aReportDigits - precision when reporting
  * aUsage - current usage of the unit in turns
+ * aIncrement - increment with what if the sensor ticks
  */
-void Sensor::setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int aC, int aReportFactor, int aReportDigits, unsigned long aUsage) {
+void Sensor::setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int aC, int aReportFactor, int aReportDigits, unsigned long aUsage, int aIncrement) {
   sensorPin = aSensorPin;
   name = aName;
   tickOnLowOrHigh = aTickOnLowOrHigh;
@@ -64,6 +67,7 @@ void Sensor::setup(int aSensorPin, const char *aName, int aTickOnLowOrHigh, int 
   reportFactor = aReportFactor;
   reportDigits = aReportDigits;
   usage = aUsage;
+  increment = aIncrement;
 
   pinMode(sensorPin, INPUT);
   state = lastState = digitalRead(sensorPin);
@@ -87,8 +91,8 @@ void Sensor::check() {
  */
 void Sensor::tick() {
   unsigned long time = millis(); // Record tick time!
-  usage++;
-  ticksSinceLastReport++;
+  usage+=increment;
+  ticksSinceLastReport+=increment;
   if (lastRotationTime > 0) {
     // 3600000.0 is the number of miliseconds in an hour
     currentUse = (float)reportFactor * ((3600000.0 / (float)(time-lastRotationTime)) / (float)c);
